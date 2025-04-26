@@ -5,12 +5,12 @@ import { Book, Sale, DailySummary } from '../types';
 const API_KEY = 'AIzaSyAZL8oW4PZZjuhMfsRZuyOw9DP9Xj0nt-M';
 const CLIENT_ID = '607196946730-cue47gq9kcoim4017revjqflv94n3na9.apps.googleusercontent.com';
 const SPREADSHEET_ID = '1nfgmUZcIasQf_smM5sA7D1yMcrUzGxvoVsl5royv1JI';
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 
 const SHEETS = {
   BOOKS: 'Books',
   SALES: 'Sales',
-  SUMMARY: 'Sumarry' // Note: keeping the typo as per the user's sheet name
+  SUMMARY: 'Summary' // Note: keeping the typo as per the user's sheet name
 };
 
 // Track loading state
@@ -87,13 +87,16 @@ export const signIn = async () => {
         }
         
         try {
-          // Get user profile from People API
           const response = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', {
             headers: {
               'Authorization': `Bearer ${tokenResponse.access_token}`
             }
           });
-          
+    
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+    
           const userInfo = await response.json();
           
           resolve({
@@ -101,6 +104,7 @@ export const signIn = async () => {
             getName: () => userInfo.name,
             getImageUrl: () => userInfo.picture
           });
+    
         } catch (error) {
           console.error("Error fetching user profile:", error);
           reject(error);
@@ -136,18 +140,21 @@ export const fetchBooks = async (): Promise<Book[]> => {
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEETS.BOOKS}!A2:E`
     });
-
+    console.log(response);
     const rows = response.result.values || [];
     return rows.map((row) => ({
       bookId: row[0],
       bookTitle: row[1],
       quantity: Number(row[2]),
-      unitPrice: Number(row[3]),
+      unitPrice: row[3],
       note: row[4] || ''
     }));
+    
   } catch (error) {
     console.error("Error fetching books:", error);
     throw error;
+  }finally{
+    
   }
 };
 
@@ -227,19 +234,21 @@ export const fetchTodaySales = async (): Promise<Sale[]> => {
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEETS.SALES}!A2:F`
     });
+    
 
     const rows = response.result.values || [];
     return rows
       .filter(row => {
         const saleDate = new Date(row[5]).toLocaleDateString('en-US');
+        console.log(saleDate)
         return saleDate === today;
       })
       .map(row => ({
         saleId: row[0],
         bookId: row[1],
-        quantitySold: Number(row[2]),
-        discount: Number(row[3]),
-        totalPrice: Number(row[4]),
+        quantitySold: (row[2]),
+        discount: row[3],
+        totalPrice: (row[4]),
         timestamp: row[5]
       }));
   } catch (error) {
@@ -266,7 +275,6 @@ export const generateDailySummary = async (): Promise<DailySummary> => {
     );
 
     if (existingRowIndex !== -1) {
-      // Update existing summary
       await window.gapi.client.sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
         range: `${SHEETS.SUMMARY}!B${existingRowIndex + 2}`,

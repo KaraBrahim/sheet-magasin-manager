@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/utils';
+
 import { addSale, updateBookQuantity } from '@/lib/googleSheetsApi';
 import { Loader2, X } from 'lucide-react';
 
@@ -98,7 +98,7 @@ const SaleForm: React.FC<SaleFormProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-sm mx-auto fixed">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Record Sale</CardTitle>
         <Button variant="ghost" size="icon" onClick={onClose}>
@@ -125,31 +125,20 @@ const SaleForm: React.FC<SaleFormProps> = ({
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="discount">Discount (%)</Label>
-            <Input
-              id="discount"
-              type="number"
-              min="0"
-              max="100"
-              value={discount}
-              onChange={handleDiscountChange}
-              disabled={isProcessing}
-            />
-          </div>
+          
           
           <div className="pt-4 border-t">
             <div className="flex justify-between">
               <span>Base Price:</span>
-              <span>{formatCurrency(basePrice)}</span>
+              <span>{basePrice}</span>
             </div>
             <div className="flex justify-between">
               <span>Discount ({discount}%):</span>
-              <span>-{formatCurrency(discountAmount)}</span>
+              <span>-{discountAmount}</span>
             </div>
             <div className="flex justify-between font-bold mt-2">
               <span>Total:</span>
-              <span>{formatCurrency(finalPrice)}</span>
+              <span>{finalPrice}</span>
             </div>
           </div>
         </CardContent>
