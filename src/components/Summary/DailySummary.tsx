@@ -1,12 +1,17 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { fetchTodaySales, generateDailySummary } from '@/lib/googleSheetsApi';
-import { useToast } from '@/components/ui/use-toast';
-import { formatCurrency } from '@/lib/utils';
-import { Sale } from '@/types';
-import { Loader2 } from 'lucide-react';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { fetchTodaySales, generateDailySummary } from "@/lib/googleSheetsApi";
+import { useToast } from "@/components/ui/use-toast";
+import { formatCurrency } from "@/lib/utils";
+import { Sale } from "@/types";
+import { Loader2 } from "lucide-react";
 
 interface DailySummaryProps {
   onSummaryGenerated: () => void;
@@ -22,25 +27,25 @@ const DailySummary: React.FC<DailySummaryProps> = ({ onSummaryGenerated }) => {
   const handleGenerateSummary = async () => {
     try {
       setIsLoading(true);
-      
+
       // Fetch today's sales
       const todaySales = await fetchTodaySales();
       setSales(todaySales);
-      
+
       // Generate and update summary in the sheet
       const summary = await generateDailySummary();
       setTotalAmount(summary.totalSales);
-      
+
       setIsSummaryShown(true);
-      
+
       toast({
         title: "Summary Generated",
         description: `Daily summary for ${summary.date} has been created.`,
       });
-      
+
       onSummaryGenerated();
     } catch (error) {
-      console.error('Error generating summary:', error);
+      console.error("Error generating summary:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -61,31 +66,35 @@ const DailySummary: React.FC<DailySummaryProps> = ({ onSummaryGenerated }) => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="font-medium">Today's Sales</h3>
-              <p>{sales.length} transaction{sales.length !== 1 ? 's' : ''}</p>
+              <p>
+                {sales.length} transaction{sales.length !== 1 ? "s" : ""}
+              </p>
             </div>
-            
+
             <div className="border rounded-md p-4 bg-muted/30">
               <div className="text-center">
                 <p className="text-muted-foreground mb-2">Total Revenue</p>
-                <p className="text-4xl font-bold">{formatCurrency(totalAmount)}</p>
+                <p className="text-4xl font-bold">
+                  {formatCurrency(totalAmount)}
+                </p>
                 <p className="text-muted-foreground mt-2">
-                  {new Date().toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                  {new Date().toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
                   })}
                 </p>
               </div>
             </div>
-            
+
             {sales.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium mb-2">Transactions</h4>
                 <div className="space-y-2 max-h-[300px] overflow-y-auto">
                   {sales.map((sale) => (
-                    <div 
-                      key={sale.saleId} 
+                    <div
+                      key={sale.saleId}
                       className="flex justify-between border-b pb-2"
                     >
                       <div>
@@ -94,16 +103,18 @@ const DailySummary: React.FC<DailySummaryProps> = ({ onSummaryGenerated }) => {
                           {new Date(sale.timestamp).toLocaleTimeString()}
                         </p>
                       </div>
-                      <p className="font-medium">{formatCurrency(sale.totalPrice)}</p>
+                      <p className="font-medium">
+                        {formatCurrency(sale.totalPrice)}
+                      </p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            
-            <Button 
-              variant="outline" 
-              className="w-full" 
+
+            <Button
+              variant="outline"
+              className="w-full"
               onClick={() => setIsSummaryShown(false)}
             >
               Close Summary
@@ -126,7 +137,7 @@ const DailySummary: React.FC<DailySummaryProps> = ({ onSummaryGenerated }) => {
                   Generating...
                 </>
               ) : (
-                'Generate Daily Summary'
+                "Generate Daily Summary"
               )}
             </Button>
           </div>

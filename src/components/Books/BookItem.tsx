@@ -1,8 +1,13 @@
-
-import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Book } from '@/types';
-import { formatCurrency } from '@/lib/utils';
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Book } from "@/types";
+import { formatCurrency } from "@/lib/utils";
 
 interface BookItemProps {
   book: Book;
@@ -25,18 +30,22 @@ const BookItem: React.FC<BookItemProps> = ({ book, onSelectForSale }) => {
         </div>
         <div className="flex justify-between">
           <span className="text-sm text-muted-foreground">In Stock:</span>
-          <span 
+          <span
             className={`font-medium ${
-              isOutOfStock ? "text-destructive" : 
-              isLowStock ? "text-amber-500" : 
-              "text-green-600"
+              isOutOfStock
+                ? "text-destructive"
+                : isLowStock
+                ? "text-amber-500"
+                : "text-green-600"
             }`}
           >
             {book.quantity}
           </span>
         </div>
         {book.note && (
-          <p className="mt-4 text-sm italic text-muted-foreground">{book.note}</p>
+          <p className="mt-4 text-sm italic text-muted-foreground">
+            {book.note}
+          </p>
         )}
       </CardContent>
       <CardFooter>
@@ -44,8 +53,8 @@ const BookItem: React.FC<BookItemProps> = ({ book, onSelectForSale }) => {
           onClick={() => onSelectForSale(book)}
           disabled={isOutOfStock}
           className={`w-full py-2 px-4 rounded-md transition-colors ${
-            isOutOfStock 
-              ? "bg-muted text-muted-foreground cursor-not-allowed" 
+            isOutOfStock
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
           }`}
         >
