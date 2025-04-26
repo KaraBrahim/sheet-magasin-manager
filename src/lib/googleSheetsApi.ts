@@ -13,13 +13,6 @@ const SHEETS = {
   SUMMARY: 'Sumarry' // Note: keeping the typo as per the user's sheet name
 };
 
-// Ensure gapi is defined to avoid TypeScript errors
-declare global {
-  interface Window {
-    gapi: any;
-  }
-}
-
 // Load the Google API client library
 export const loadGoogleApi = async () => {
   return new Promise<void>((resolve, reject) => {
