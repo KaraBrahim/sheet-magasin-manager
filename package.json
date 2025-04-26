@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://KaraBrahim.github.io/sheet-magasin-manager",
+  "homepage": "https://KaraBrahim.github.io/sheet-magasin-manager/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
