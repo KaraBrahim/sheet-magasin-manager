@@ -13,15 +13,22 @@ const SHEETS = {
   SUMMARY: 'Sumarry' // Note: keeping the typo as per the user's sheet name
 };
 
+// Ensure gapi is defined to avoid TypeScript errors
+declare global {
+  interface Window {
+    gapi: any;
+  }
+}
+
 // Load the Google API client library
 export const loadGoogleApi = async () => {
   return new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = 'https://apis.google.com/js/api.js';
     script.onload = () => {
-      gapi.load('client:auth2', async () => {
+      window.gapi.load('client:auth2', async () => {
         try {
-          await gapi.client.init({
+          await window.gapi.client.init({
             apiKey: API_KEY,
             clientId: CLIENT_ID,
             discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
@@ -40,13 +47,13 @@ export const loadGoogleApi = async () => {
 
 // Authentication functions
 export const isSignedIn = () => {
-  return gapi.auth2?.getAuthInstance()?.isSignedIn?.get() || false;
+  return window.gapi.auth2?.getAuthInstance()?.isSignedIn?.get() || false;
 };
 
 export const signIn = async () => {
   try {
-    await gapi.auth2.getAuthInstance().signIn();
-    return gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
+    await window.gapi.auth2.getAuthInstance().signIn();
+    return window.gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
   } catch (error) {
     console.error("Error signing in:", error);
     throw error;
@@ -55,7 +62,7 @@ export const signIn = async () => {
 
 export const signOut = async () => {
   try {
-    await gapi.auth2.getAuthInstance().signOut();
+    await window.gapi.auth2.getAuthInstance().signOut();
   } catch (error) {
     console.error("Error signing out:", error);
     throw error;
@@ -65,7 +72,7 @@ export const signOut = async () => {
 // Data functions
 export const fetchBooks = async (): Promise<Book[]> => {
   try {
-    const response = await gapi.client.sheets.spreadsheets.values.get({
+    const response = await window.gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEETS.BOOKS}!A2:E`
     });
@@ -87,7 +94,7 @@ export const fetchBooks = async (): Promise<Book[]> => {
 export const updateBookQuantity = async (bookId: string, newQuantity: number): Promise<void> => {
   try {
     // First, find the row index of the book
-    const response = await gapi.client.sheets.spreadsheets.values.get({
+    const response = await window.gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEETS.BOOKS}!A2:A`
     });
@@ -100,7 +107,7 @@ export const updateBookQuantity = async (bookId: string, newQuantity: number): P
     }
 
     // Update the quantity in the sheet (row + 2 because we start at A2)
-    await gapi.client.sheets.spreadsheets.values.update({
+    await window.gapi.client.sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEETS.BOOKS}!C${rowIndex + 2}`,
       valueInputOption: 'USER_ENTERED',
@@ -117,7 +124,7 @@ export const updateBookQuantity = async (bookId: string, newQuantity: number): P
 export const addSale = async (sale: Omit<Sale, 'saleId'>): Promise<string> => {
   try {
     // Generate a new sale ID
-    const salesResponse = await gapi.client.sheets.spreadsheets.values.get({
+    const salesResponse = await window.gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEETS.SALES}!A2:A`
     });
@@ -128,7 +135,7 @@ export const addSale = async (sale: Omit<Sale, 'saleId'>): Promise<string> => {
     const newSaleId = `S${newSaleNumber.toString().padStart(3, '0')}`;
 
     // Add the sale to the sheet
-    await gapi.client.sheets.spreadsheets.values.append({
+    await window.gapi.client.sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEETS.SALES}!A2`,
       valueInputOption: 'USER_ENTERED',
@@ -156,7 +163,7 @@ export const fetchTodaySales = async (): Promise<Sale[]> => {
   try {
     const today = new Date().toLocaleDateString('en-US');
     
-    const response = await gapi.client.sheets.spreadsheets.values.get({
+    const response = await window.gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEETS.SALES}!A2:F`
     });
@@ -188,7 +195,7 @@ export const generateDailySummary = async (): Promise<DailySummary> => {
     const today = new Date().toLocaleDateString('en-US');
 
     // Add or update the summary for today
-    const summaryResponse = await gapi.client.sheets.spreadsheets.values.get({
+    const summaryResponse = await window.gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEETS.SUMMARY}!A2:B`
     });
@@ -200,7 +207,7 @@ export const generateDailySummary = async (): Promise<DailySummary> => {
 
     if (existingRowIndex !== -1) {
       // Update existing summary
-      await gapi.client.sheets.spreadsheets.values.update({
+      await window.gapi.client.sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
         range: `${SHEETS.SUMMARY}!B${existingRowIndex + 2}`,
         valueInputOption: 'USER_ENTERED',
@@ -210,7 +217,7 @@ export const generateDailySummary = async (): Promise<DailySummary> => {
       });
     } else {
       // Add new summary
-      await gapi.client.sheets.spreadsheets.values.append({
+      await window.gapi.client.sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
         range: `${SHEETS.SUMMARY}!A2`,
         valueInputOption: 'USER_ENTERED',

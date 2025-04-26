@@ -18,7 +18,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await loadGoogleApi();
         
         if (isSignedIn()) {
-          const profile = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
+          const profile = window.gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
           setUser({
             email: profile.getEmail(),
             name: profile.getName(),
