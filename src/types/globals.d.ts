@@ -1,40 +1,13 @@
 
-// Type declaration for global Google API
+// Add Google Identity Services typings
 interface Window {
   gapi: any;
-}
-
-// Additional type definitions for Google API
-interface GapiClient {
-  sheets: {
-    spreadsheets: {
-      values: {
-        get: (params: any) => Promise<any>;
-        update: (params: any) => Promise<any>;
-        append: (params: any) => Promise<any>;
+  google: {
+    accounts: {
+      oauth2: {
+        initTokenClient: (config: any) => any;
+        revoke: (token: string, callback?: () => void) => void;
       }
     }
-  }
-}
-
-// Extend gapi namespace
-declare namespace gapi {
-  const client: GapiClient;
-  
-  namespace auth2 {
-    function getAuthInstance(): {
-      isSignedIn: { get(): boolean };
-      signIn(): Promise<any>;
-      signOut(): Promise<void>;
-      currentUser: {
-        get(): {
-          getBasicProfile(): {
-            getEmail(): string;
-            getName(): string;
-            getImageUrl(): string;
-          }
-        }
-      }
-    }
-  }
+  };
 }

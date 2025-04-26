@@ -1,3 +1,4 @@
+
 import { Book, Sale, DailySummary } from '../types';
 
 // Google API constants
@@ -12,64 +13,123 @@ const SHEETS = {
   SUMMARY: 'Sumarry' // Note: keeping the typo as per the user's sheet name
 };
 
-// Load the Google API client library
+// Track loading state
 let isApiLoaded = false;
+let tokenClient: google.accounts.oauth2.TokenClient | null = null;
 
+// Load the Google API client library
 export const loadGoogleApi = async () => {
   if (isApiLoaded) {
     return;
   }
   
   return new Promise<void>((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    script.onload = () => {
-      window.gapi.load('client:auth2', async () => {
+    // Load the Google Identity Services script
+    const gisScript = document.createElement('script');
+    gisScript.src = 'https://accounts.google.com/gsi/client';
+    gisScript.async = true;
+    gisScript.defer = true;
+    gisScript.onload = () => {
+      // Load the Google API script
+      const gapiScript = document.createElement('script');
+      gapiScript.src = 'https://apis.google.com/js/api.js';
+      gapiScript.async = true;
+      gapiScript.defer = true;
+      gapiScript.onload = async () => {
         try {
+          await new Promise<void>((res, rej) => {
+            window.gapi.load('client', { callback: res, onerror: rej });
+          });
+          
           await window.gapi.client.init({
             apiKey: API_KEY,
-            clientId: CLIENT_ID,
             discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-            scope: SCOPES
           });
+          
+          // Initialize the token client
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: () => {} // We'll handle the callback manually
+          });
+          
           isApiLoaded = true;
           resolve();
         } catch (error) {
           console.error('Error initializing Google API:', error);
           reject(error);
         }
-      });
+      };
+      gapiScript.onerror = (error) => reject(error);
+      document.body.appendChild(gapiScript);
     };
-    script.onerror = (error) => reject(error);
-    document.body.appendChild(script);
+    gisScript.onerror = (error) => reject(error);
+    document.body.appendChild(gisScript);
   });
 };
 
 // Authentication functions
 export const isSignedIn = () => {
-  return window.gapi.auth2?.getAuthInstance()?.isSignedIn?.get() || false;
+  return window.gapi.client.getToken() !== null;
 };
 
 export const signIn = async () => {
-  try {
-    await window.gapi.auth2.getAuthInstance().signIn();
-    return window.gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
-  } catch (error) {
-    console.error("Error signing in:", error);
-    throw error;
+  if (!tokenClient) {
+    throw new Error('Token client not initialized');
   }
+  
+  return new Promise<{getEmail: () => string, getName: () => string, getImageUrl: () => string}>((resolve, reject) => {
+    try {
+      tokenClient!.callback = async (tokenResponse) => {
+        if (tokenResponse.error) {
+          reject(tokenResponse);
+          return;
+        }
+        
+        try {
+          // Get user profile from People API
+          const response = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', {
+            headers: {
+              'Authorization': `Bearer ${tokenResponse.access_token}`
+            }
+          });
+          
+          const userInfo = await response.json();
+          
+          resolve({
+            getEmail: () => userInfo.email,
+            getName: () => userInfo.name,
+            getImageUrl: () => userInfo.picture
+          });
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          reject(error);
+        }
+      };
+      
+      // Prompt the user to select a Google account and authorize the app
+      tokenClient!.requestAccessToken({prompt: 'consent'});
+    } catch (error) {
+      console.error("Error signing in:", error);
+      reject(error);
+    }
+  });
 };
 
 export const signOut = async () => {
   try {
-    await window.gapi.auth2.getAuthInstance().signOut();
+    const token = window.gapi.client.getToken();
+    if (token !== null) {
+      google.accounts.oauth2.revoke(token.access_token);
+      window.gapi.client.setToken(null);
+    }
   } catch (error) {
     console.error("Error signing out:", error);
     throw error;
   }
 };
 
-// Data functions
+// Data functions 
 export const fetchBooks = async (): Promise<Book[]> => {
   try {
     const response = await window.gapi.client.sheets.spreadsheets.values.get({
