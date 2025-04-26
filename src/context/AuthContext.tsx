@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { User, AuthContextType } from '../types';
 import { loadGoogleApi, isSignedIn, signIn, signOut } from '../lib/googleSheetsApi';
 import { useToast } from '@/components/ui/use-toast';
@@ -8,42 +8,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    const initGoogleApi = async () => {
-      try {
-        await loadGoogleApi();
-        
-        if (isSignedIn()) {
-          const profile = window.gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
-          setUser({
-            email: profile.getEmail(),
-            name: profile.getName(),
-            picture: profile.getImageUrl()
-          });
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Error initializing Google API:', error);
-        toast({
-          variant: "destructive",
-          title: "Authentication Error",
-          description: "Failed to initialize Google API. Please try again.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initGoogleApi();
-  }, [toast]);
 
   const login = async () => {
     try {
       setIsLoading(true);
+      await loadGoogleApi();
       const profile = await signIn();
       setUser({
         email: profile.getEmail(),

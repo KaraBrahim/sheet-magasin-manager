@@ -1,4 +1,3 @@
-
 import { Book, Sale, DailySummary } from '../types';
 
 // Google API constants
@@ -14,7 +13,13 @@ const SHEETS = {
 };
 
 // Load the Google API client library
+let isApiLoaded = false;
+
 export const loadGoogleApi = async () => {
+  if (isApiLoaded) {
+    return;
+  }
+  
   return new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = 'https://apis.google.com/js/api.js';
@@ -27,8 +32,10 @@ export const loadGoogleApi = async () => {
             discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
             scope: SCOPES
           });
+          isApiLoaded = true;
           resolve();
         } catch (error) {
+          console.error('Error initializing Google API:', error);
           reject(error);
         }
       });
