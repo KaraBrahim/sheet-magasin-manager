@@ -47,7 +47,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b py-4 px-6 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">معرض الأسبوع الثقافي</h1>
+          <h1 className="text-2xl font-bold text-primary">Book Store Manager</h1>
           <GoogleAuth />
         </div>
       </header>
@@ -87,15 +87,38 @@ const Index = () => {
                 />
               ) : (
                 <Card className="p-6">
+                  <h2 className="text-xl font-medium mb-4">How to Use</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-medium">Sell a Book</h3>
+                      <p className="text-muted-foreground">
+                        Click on "Sell Book" from the inventory list to record a sale.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-medium">Apply Discounts</h3>
+                      <p className="text-muted-foreground">
+                        You can apply a percentage discount when selling a book.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-medium">Daily Summary</h3>
+                      <p className="text-muted-foreground">
+                        Generate a summary of all sales for the day to update your records.
+                      </p>
+                    </div>
+                  </div>
                 </Card>
               )}
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center min-h-[70vh] text-center max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold mb-4">مرحبا بك في الإصدار التجريبي لتطبيق المعرض</h2>
+            <h2 className="text-3xl font-bold mb-4">Welcome to Book Store Manager</h2>
             <p className="text-xl text-muted-foreground mb-8">
-            Google سجل دخولك باستخدام حساب  
+              Sign in with your Google account to manage your book inventory and sales.
             </p>
             <GoogleAuth />
           </div>
@@ -103,7 +126,7 @@ const Index = () => {
       </main>
       
       <footer className="border-t py-6 mt-20 text-center text-muted-foreground">
-        <p>Brahim kara &copy; {new Date().getFullYear()}</p>
+        <p>Book Store Manager &copy; {new Date().getFullYear()}</p>
       </footer>
     </div>
   );

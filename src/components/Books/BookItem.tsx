@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Book } from '@/types';
-
+import { formatCurrency } from '@/lib/utils';
 
 interface BookItemProps {
   book: Book;
@@ -21,7 +21,7 @@ const BookItem: React.FC<BookItemProps> = ({ book, onSelectForSale }) => {
       <CardContent className="flex-grow">
         <div className="flex justify-between mb-2">
           <span className="text-sm text-muted-foreground">Price:</span>
-          <span className="font-medium">{book.unitPrice}</span>
+          <span className="font-medium">{formatCurrency(book.unitPrice)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-sm text-muted-foreground">In Stock:</span>

@@ -3,7 +3,7 @@ export interface Book {
   bookId: string;
   bookTitle: string;
   quantity: number;
-  unitPrice: any;
+  unitPrice: number;
   note?: string;
 }
 
