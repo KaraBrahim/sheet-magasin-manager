@@ -6,7 +6,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "/sheet-magasin-manager/",
+  base: "./",  // Using relative paths instead of absolute
   server: {
     host: "::",
     port: 8080,
@@ -25,4 +25,3 @@ export default defineConfig(({ mode }) => ({
     sourcemap: true,
   }
 }));
-
