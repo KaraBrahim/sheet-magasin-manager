@@ -1,6 +1,7 @@
+
 import React, { useState } from "react";
 import { Book, Sale } from "@/types";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -11,6 +12,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
 import { addSale, updateBookQuantity } from "@/lib/googleSheetsApi";
 import { Loader2, X } from "lucide-react";
@@ -28,6 +36,7 @@ const SaleForm: React.FC<SaleFormProps> = ({
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [discount, setDiscount] = useState(0);
+  const [paymentStatus, setPaymentStatus] = useState<"paid" | "pending">("paid");
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -74,6 +83,8 @@ const SaleForm: React.FC<SaleFormProps> = ({
         discount: discount,
         totalPrice: finalPrice,
         timestamp: new Date().toISOString(),
+        paymentStatus: paymentStatus,
+        bookTitle: selectedBook.bookTitle
       };
 
       // Add the sale to the sheet
@@ -149,6 +160,23 @@ const SaleForm: React.FC<SaleFormProps> = ({
                 onChange={handleDiscountChange}
                 disabled={isProcessing}
               />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="payment-status">Payment Status</Label>
+              <Select 
+                value={paymentStatus} 
+                onValueChange={(value) => setPaymentStatus(value as "paid" | "pending")}
+                disabled={isProcessing}
+              >
+                <SelectTrigger id="payment-status">
+                  <SelectValue placeholder="Select payment status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="pt-4 border-t">

@@ -14,6 +14,16 @@ export interface Sale {
   discount: number;
   totalPrice: number;
   timestamp: string;
+  paymentStatus?: "paid" | "pending";
+  bookTitle?: string;
+}
+
+export interface Donation {
+  donationId: string;
+  donorName: string;
+  amount: number;
+  timestamp: string;
+  note?: string;
 }
 
 export interface DailySummary {

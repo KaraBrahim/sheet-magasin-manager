@@ -1,5 +1,6 @@
 
-import { Book, Sale, DailySummary } from '../types';
+
+import { Book, Sale, DailySummary, Donation } from '../types';
 
 // Google API constants
 const API_KEY = 'AIzaSyAZL8oW4PZZjuhMfsRZuyOw9DP9Xj0nt-M';
@@ -10,12 +11,13 @@ const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 const SHEETS = {
   BOOKS: 'Books',
   SALES: 'Sales',
-  SUMMARY: 'Sumarry' // Note: keeping the typo as per the user's sheet name
+  SUMMARY: 'Sumarry', // Note: keeping the typo as per the user's sheet name
+  DONATIONS: 'Donations'
 };
 
 // Track loading state
 let isApiLoaded = false;
-let tokenClient: google.accounts.oauth2.TokenClient | null = null;
+let tokenClient: any = null;
 
 // Load the Google API client library
 export const loadGoogleApi = async () => {
@@ -47,7 +49,7 @@ export const loadGoogleApi = async () => {
           });
           
           // Initialize the token client
-          tokenClient = google.accounts.oauth2.initTokenClient({
+          tokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
             callback: () => {} // We'll handle the callback manually
@@ -80,7 +82,7 @@ export const signIn = async () => {
   
   return new Promise<{getEmail: () => string, getName: () => string, getImageUrl: () => string}>((resolve, reject) => {
     try {
-      tokenClient!.callback = async (tokenResponse) => {
+      tokenClient.callback = async (tokenResponse: any) => {
         if (tokenResponse.error) {
           reject(tokenResponse);
           return;
@@ -108,7 +110,7 @@ export const signIn = async () => {
       };
       
       // Prompt the user to select a Google account and authorize the app
-      tokenClient!.requestAccessToken({prompt: 'consent'});
+      tokenClient.requestAccessToken({prompt: 'consent'});
     } catch (error) {
       console.error("Error signing in:", error);
       reject(error);
@@ -120,7 +122,7 @@ export const signOut = async () => {
   try {
     const token = window.gapi.client.getToken();
     if (token !== null) {
-      google.accounts.oauth2.revoke(token.access_token);
+      window.google.accounts.oauth2.revoke(token.access_token);
       window.gapi.client.setToken(null);
     }
   } catch (error) {
@@ -141,8 +143,8 @@ export const fetchBooks = async (): Promise<Book[]> => {
     return rows.map((row) => ({
       bookId: row[0],
       bookTitle: row[1],
-      quantity: Number(row[2]),
-      unitPrice: Number(row[3]),
+      quantity: Number(row[2] || 0),
+      unitPrice: Number(row[3] || 0),
       note: row[4] || ''
     }));
   } catch (error) {
@@ -207,7 +209,8 @@ export const addSale = async (sale: Omit<Sale, 'saleId'>): Promise<string> => {
           sale.quantitySold,
           sale.discount,
           sale.totalPrice,
-          sale.timestamp
+          sale.timestamp,
+          sale.paymentStatus || "paid"
         ]]
       }
     });
@@ -219,29 +222,81 @@ export const addSale = async (sale: Omit<Sale, 'saleId'>): Promise<string> => {
   }
 };
 
-export const fetchTodaySales = async (): Promise<Sale[]> => {
+export const updateSalePaymentStatus = async (saleId: string, paymentStatus: "paid" | "pending"): Promise<void> => {
   try {
-    const today = new Date().toLocaleDateString('en-US');
-    
+    // First, find the row index of the sale
     const response = await window.gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEETS.SALES}!A2:F`
+      range: `${SHEETS.SALES}!A2:A`
     });
 
     const rows = response.result.values || [];
-    return rows
-      .filter(row => {
-        const saleDate = new Date(row[5]).toLocaleDateString('en-US');
-        return saleDate === today;
+    const rowIndex = rows.findIndex((row) => row[0] === saleId);
+    
+    if (rowIndex === -1) {
+      throw new Error(`Sale with ID ${saleId} not found`);
+    }
+
+    // Update the payment status in the sheet (row + 2 because we start at A2)
+    await window.gapi.client.sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEETS.SALES}!G${rowIndex + 2}`,
+      valueInputOption: 'USER_ENTERED',
+      resource: {
+        values: [[paymentStatus]]
+      }
+    });
+  } catch (error) {
+    console.error("Error updating sale payment status:", error);
+    throw error;
+  }
+};
+
+export const fetchAllSales = async (): Promise<Sale[]> => {
+  try {
+    const [salesResponse, booksResponse] = await Promise.all([
+      window.gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEETS.SALES}!A2:G`
+      }),
+      window.gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEETS.BOOKS}!A2:B`
       })
-      .map(row => ({
-        saleId: row[0],
-        bookId: row[1],
-        quantitySold: Number(row[2]),
-        discount: Number(row[3]),
-        totalPrice: Number(row[4]),
-        timestamp: row[5]
-      }));
+    ]);
+
+    const salesRows = salesResponse.result.values || [];
+    const booksMap = new Map();
+    
+    (booksResponse.result.values || []).forEach(row => {
+      booksMap.set(row[0], row[1]);
+    });
+    
+    return salesRows.map(row => ({
+      saleId: row[0],
+      bookId: row[1],
+      bookTitle: booksMap.get(row[1]) || 'Unknown Book',
+      quantitySold: Number(row[2] || 0),
+      discount: Number(row[3] || 0),
+      totalPrice: Number(row[4] || 0),
+      timestamp: row[5],
+      paymentStatus: row[6] || "paid"
+    }));
+  } catch (error) {
+    console.error("Error fetching sales:", error);
+    throw error;
+  }
+};
+
+export const fetchTodaySales = async (): Promise<Sale[]> => {
+  try {
+    const today = new Date().toLocaleDateString('en-US');
+    const allSales = await fetchAllSales();
+    
+    return allSales.filter(sale => {
+      const saleDate = new Date(sale.timestamp).toLocaleDateString('en-US');
+      return saleDate === today;
+    });
   } catch (error) {
     console.error("Error fetching today's sales:", error);
     throw error;
@@ -251,7 +306,7 @@ export const fetchTodaySales = async (): Promise<Sale[]> => {
 export const generateDailySummary = async (): Promise<DailySummary> => {
   try {
     const sales = await fetchTodaySales();
-    const totalSales = sales.reduce((sum, sale) => sum + sale.totalPrice, 0);
+    const totalSales = sales.reduce((sum, sale) => sum + (sale.totalPrice || 0), 0);
     const today = new Date().toLocaleDateString('en-US');
 
     // Add or update the summary for today
@@ -297,6 +352,104 @@ export const generateDailySummary = async (): Promise<DailySummary> => {
     };
   } catch (error) {
     console.error("Error generating daily summary:", error);
+    throw error;
+  }
+};
+
+// Donations functions
+export const addDonation = async (donation: Omit<Donation, 'donationId'>): Promise<string> => {
+  try {
+    // Check if Donations sheet exists and create it if not
+    try {
+      await window.gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEETS.DONATIONS}!A1`
+      });
+    } catch (error) {
+      // Create the Donations sheet with headers
+      await window.gapi.client.sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        resource: {
+          requests: [
+            {
+              addSheet: {
+                properties: {
+                  title: SHEETS.DONATIONS
+                }
+              }
+            }
+          ]
+        }
+      });
+
+      // Add headers
+      await window.gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEETS.DONATIONS}!A1:E1`,
+        valueInputOption: 'USER_ENTERED',
+        resource: {
+          values: [["DonationID", "DonorName", "Amount", "Timestamp", "Note"]]
+        }
+      });
+    }
+
+    // Generate a new donation ID
+    const donationsResponse = await window.gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEETS.DONATIONS}!A2:A`
+    });
+
+    const donationsRows = donationsResponse.result.values || [];
+    const lastDonationId = donationsRows.length > 0 ? donationsRows[donationsRows.length - 1][0] : 'D000';
+    const newDonationNumber = parseInt(lastDonationId.substring(1)) + 1;
+    const newDonationId = `D${newDonationNumber.toString().padStart(3, '0')}`;
+
+    // Add the donation to the sheet
+    await window.gapi.client.sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEETS.DONATIONS}!A2`,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      resource: {
+        values: [[
+          newDonationId, 
+          donation.donorName,
+          donation.amount,
+          donation.timestamp,
+          donation.note || ''
+        ]]
+      }
+    });
+
+    return newDonationId;
+  } catch (error) {
+    console.error("Error adding donation:", error);
+    throw error;
+  }
+};
+
+export const fetchDonations = async (): Promise<Donation[]> => {
+  try {
+    try {
+      const response = await window.gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEETS.DONATIONS}!A2:E`
+      });
+  
+      const rows = response.result.values || [];
+      return rows.map((row) => ({
+        donationId: row[0],
+        donorName: row[1],
+        amount: Number(row[2] || 0),
+        timestamp: row[3],
+        note: row[4] || ''
+      }));
+    } catch (error) {
+      // If the sheet doesn't exist yet, return an empty array
+      return [];
+    }
+  } catch (error) {
+    console.error("Error fetching donations:", error);
     throw error;
   }
 };

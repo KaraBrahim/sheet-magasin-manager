@@ -1,4 +1,5 @@
 
+
 // Add Google Identity Services typings
 interface Window {
   gapi: any;
@@ -11,3 +12,4 @@ interface Window {
     }
   };
 }
+

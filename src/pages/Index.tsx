@@ -1,9 +1,12 @@
+
 import React, { useState, useEffect } from "react";
 import { Book } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import GoogleAuth from "@/components/Auth/GoogleAuth";
 import BookList from "@/components/Books/BookList";
 import SaleForm from "@/components/Sales/SaleForm";
+import SalesHistory from "@/components/Sales/SalesHistory";
+import Donations from "@/components/Donations/Donations";
 import DailySummary from "@/components/Summary/DailySummary";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -28,6 +31,10 @@ const Index = () => {
   };
 
   const handleSummaryGenerated = () => {
+    setRefresh((prev) => prev + 1);
+  };
+
+  const handleDonationAdded = () => {
     setRefresh((prev) => prev + 1);
   };
 
@@ -58,9 +65,11 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
             <div className="lg:col-span-2">
               <Tabs defaultValue="books" className="space-y-6">
-                <TabsList className="grid grid-cols-2">
+                <TabsList className="grid grid-cols-4">
                   <TabsTrigger value="books">Inventory</TabsTrigger>
-                  <TabsTrigger value="sales">Daily Summary</TabsTrigger>
+                  <TabsTrigger value="sales-history">Sales History</TabsTrigger>
+                  <TabsTrigger value="donations">Donations</TabsTrigger>
+                  <TabsTrigger value="summary">Daily Summary</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="books">
@@ -70,7 +79,15 @@ const Index = () => {
                   />
                 </TabsContent>
 
-                <TabsContent value="sales">
+                <TabsContent value="sales-history">
+                  <SalesHistory key={`sales-history-${refresh}`} />
+                </TabsContent>
+
+                <TabsContent value="donations">
+                  <Donations onDonationAdded={handleDonationAdded} key={`donations-${refresh}`} />
+                </TabsContent>
+
+                <TabsContent value="summary">
                   <DailySummary
                     onSummaryGenerated={handleSummaryGenerated}
                     key={`summary-${refresh}`}
