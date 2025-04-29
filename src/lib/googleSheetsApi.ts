@@ -10,7 +10,7 @@ const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 const SHEETS = {
   BOOKS: 'Books',
   SALES: 'Sales',
-  SUMMARY: 'Summary', // Fixed typo from 'Sumarry' to 'Summary'
+  SUMMARY: 'Summary',
   DONATIONS: 'Donations'
 };
 
@@ -71,16 +71,45 @@ export const loadGoogleApi = async () => {
 
 // Authentication functions
 export const isSignedIn = () => {
-  return window.gapi.client.getToken() !== null;
+  try {
+    return window.gapi.client.getToken() !== null;
+  } catch (error) {
+    console.error("Error checking sign-in status:", error);
+    return false;
+  }
 };
 
-export const signIn = async () => {
+export const signIn = async (checkOnly = false) => {
   if (!tokenClient) {
     throw new Error('Token client not initialized');
   }
   
+  // If we're just checking status and user is already signed in, get user info
+  if (checkOnly && isSignedIn()) {
+    try {
+      const token = window.gapi.client.getToken();
+      const response = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', {
+        headers: {
+          'Authorization': `Bearer ${token.access_token}`
+        }
+      });
+      
+      const userInfo = await response.json();
+      
+      return {
+        getEmail: () => userInfo.email,
+        getName: () => userInfo.name,
+        getImageUrl: () => userInfo.picture
+      };
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      throw error;
+    }
+  }
+  
   return new Promise<{getEmail: () => string, getName: () => string, getImageUrl: () => string}>((resolve, reject) => {
     try {
+      // To prevent popup blockers, we'll only request a token when a user interaction has occurred
       tokenClient.callback = async (tokenResponse: any) => {
         if (tokenResponse.error) {
           reject(tokenResponse);
@@ -109,7 +138,13 @@ export const signIn = async () => {
       };
       
       // Prompt the user to select a Google account and authorize the app
-      tokenClient.requestAccessToken({prompt: 'consent'});
+      if (checkOnly) {
+        // If just checking, don't show the popup again
+        tokenClient.requestAccessToken({prompt: ''});
+      } else {
+        // If new sign-in, show the consent screen
+        tokenClient.requestAccessToken({prompt: 'consent'});
+      }
     } catch (error) {
       console.error("Error signing in:", error);
       reject(error);

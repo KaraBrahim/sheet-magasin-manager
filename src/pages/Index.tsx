@@ -10,12 +10,14 @@ import Donations from "@/components/Donations/Donations";
 import DailySummary from "@/components/Summary/DailySummary";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 const Index = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [refresh, setRefresh] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleBookSelect = (book: Book) => {
     setSelectedBook(book);
@@ -73,8 +75,20 @@ const Index = () => {
                 </TabsList>
 
                 <TabsContent value="books">
+                  <div className="mb-4 relative">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search books by title, author, or category..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-8"
+                      />
+                    </div>
+                  </div>
                   <BookList
                     onSelectBook={handleBookSelect}
+                    searchTerm={searchTerm}
                     key={`books-${refresh}`}
                   />
                 </TabsContent>
