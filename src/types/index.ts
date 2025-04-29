@@ -4,6 +4,8 @@ export interface Book {
   bookTitle: string;
   quantity: number;
   unitPrice: number;
+  author?: string;
+  category?: string;
   note?: string;
 }
 
@@ -14,6 +16,7 @@ export interface Sale {
   discount: number;
   totalPrice: number;
   timestamp: string;
+  clientName?: string;
   paymentStatus?: "paid" | "pending";
   bookTitle?: string;
 }

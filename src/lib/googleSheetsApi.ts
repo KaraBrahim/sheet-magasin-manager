@@ -1,5 +1,4 @@
 
-
 import { Book, Sale, DailySummary, Donation } from '../types';
 
 // Google API constants
@@ -11,7 +10,7 @@ const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 const SHEETS = {
   BOOKS: 'Books',
   SALES: 'Sales',
-  SUMMARY: 'Sumarry', // Note: keeping the typo as per the user's sheet name
+  SUMMARY: 'Summary', // Fixed typo from 'Sumarry' to 'Summary'
   DONATIONS: 'Donations'
 };
 
@@ -136,7 +135,7 @@ export const fetchBooks = async (): Promise<Book[]> => {
   try {
     const response = await window.gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEETS.BOOKS}!A2:E`
+      range: `${SHEETS.BOOKS}!A2:F`  // Updated to include Author and Category (column F)
     });
 
     const rows = response.result.values || [];
@@ -145,7 +144,9 @@ export const fetchBooks = async (): Promise<Book[]> => {
       bookTitle: row[1],
       quantity: Number(row[2] || 0),
       unitPrice: Number(row[3] || 0),
-      note: row[4] || ''
+      author: row[4] || '',
+      category: row[5] || '',
+      note: ''
     }));
   } catch (error) {
     console.error("Error fetching books:", error);
@@ -210,6 +211,7 @@ export const addSale = async (sale: Omit<Sale, 'saleId'>): Promise<string> => {
           sale.discount,
           sale.totalPrice,
           sale.timestamp,
+          sale.clientName || "", // Include client name
           sale.paymentStatus || "paid"
         ]]
       }
@@ -257,7 +259,7 @@ export const fetchAllSales = async (): Promise<Sale[]> => {
     const [salesResponse, booksResponse] = await Promise.all([
       window.gapi.client.sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEETS.SALES}!A2:G`
+        range: `${SHEETS.SALES}!A2:H` // Updated to include clientName (column G) and status (column H)
       }),
       window.gapi.client.sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
@@ -280,7 +282,8 @@ export const fetchAllSales = async (): Promise<Sale[]> => {
       discount: Number(row[3] || 0),
       totalPrice: Number(row[4] || 0),
       timestamp: row[5],
-      paymentStatus: row[6] || "paid"
+      clientName: row[6] || "",
+      paymentStatus: row[7] || "paid"
     }));
   } catch (error) {
     console.error("Error fetching sales:", error);
@@ -290,11 +293,12 @@ export const fetchAllSales = async (): Promise<Sale[]> => {
 
 export const fetchTodaySales = async (): Promise<Sale[]> => {
   try {
-    const today = new Date().toLocaleDateString('en-US');
+    const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
     const allSales = await fetchAllSales();
     
     return allSales.filter(sale => {
-      const saleDate = new Date(sale.timestamp).toLocaleDateString('en-US');
+      // Extract date part of ISO string for comparison
+      const saleDate = sale.timestamp.split('T')[0];
       return saleDate === today;
     });
   } catch (error) {
@@ -306,8 +310,8 @@ export const fetchTodaySales = async (): Promise<Sale[]> => {
 export const generateDailySummary = async (): Promise<DailySummary> => {
   try {
     const sales = await fetchTodaySales();
-    const totalSales = sales.reduce((sum, sale) => sum + (sale.totalPrice || 0), 0);
-    const today = new Date().toLocaleDateString('en-US');
+    const totalSales = sales.reduce((sum, sale) => sum + Number(sale.totalPrice || 0), 0);
+    const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
 
     // Add or update the summary for today
     const summaryResponse = await window.gapi.client.sheets.spreadsheets.values.get({
@@ -316,9 +320,7 @@ export const generateDailySummary = async (): Promise<DailySummary> => {
     });
 
     const summaryRows = summaryResponse.result.values || [];
-    const existingRowIndex = summaryRows.findIndex(row => 
-      new Date(row[0]).toLocaleDateString('en-US') === today
-    );
+    const existingRowIndex = summaryRows.findIndex(row => row[0] === today);
 
     if (existingRowIndex !== -1) {
       // Update existing summary

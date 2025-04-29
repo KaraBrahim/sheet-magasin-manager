@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Card,
@@ -28,7 +29,7 @@ const BookItem: React.FC<BookItemProps> = ({ book, onSelectForSale }) => {
           <span className="text-sm text-muted-foreground">Price:</span>
           <span className="font-medium">{formatCurrency(book.unitPrice)}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between mb-2">
           <span className="text-sm text-muted-foreground">In Stock:</span>
           <span
             className={`font-medium ${
@@ -42,6 +43,21 @@ const BookItem: React.FC<BookItemProps> = ({ book, onSelectForSale }) => {
             {book.quantity}
           </span>
         </div>
+        
+        {book.author && (
+          <div className="flex justify-between mb-2">
+            <span className="text-sm text-muted-foreground">Author:</span>
+            <span className="text-sm">{book.author}</span>
+          </div>
+        )}
+        
+        {book.category && (
+          <div className="flex justify-between mb-2">
+            <span className="text-sm text-muted-foreground">Category:</span>
+            <span className="text-sm">{book.category}</span>
+          </div>
+        )}
+        
         {book.note && (
           <p className="mt-4 text-sm italic text-muted-foreground">
             {book.note}

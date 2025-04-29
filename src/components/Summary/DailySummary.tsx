@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,15 +33,28 @@ const DailySummary: React.FC<DailySummaryProps> = ({ onSummaryGenerated }) => {
       const todaySales = await fetchTodaySales();
       setSales(todaySales);
 
+      // Calculate total sales amount (make sure we're working with numbers)
+      const calculatedTotal = todaySales.reduce(
+        (sum, sale) => sum + Number(sale.totalPrice || 0),
+        0
+      );
+
       // Generate and update summary in the sheet
       const summary = await generateDailySummary();
       setTotalAmount(summary.totalSales);
 
       setIsSummaryShown(true);
 
+      const formattedDate = new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
       toast({
         title: "Summary Generated",
-        description: `Daily summary for ${summary.date} has been created.`,
+        description: `Daily summary for ${formattedDate} has been created.`,
       });
 
       onSummaryGenerated();
@@ -98,9 +112,9 @@ const DailySummary: React.FC<DailySummaryProps> = ({ onSummaryGenerated }) => {
                       className="flex justify-between border-b pb-2"
                     >
                       <div>
-                        <p className="text-sm">{sale.saleId}</p>
+                        <p className="text-sm">{sale.bookTitle}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(sale.timestamp).toLocaleTimeString()}
+                          {sale.saleId} - {new Date(sale.timestamp).toLocaleTimeString()}
                         </p>
                       </div>
                       <p className="font-medium">

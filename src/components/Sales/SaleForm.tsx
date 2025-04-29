@@ -37,6 +37,7 @@ const SaleForm: React.FC<SaleFormProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [discount, setDiscount] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState<"paid" | "pending">("paid");
+  const [clientName, setClientName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -73,6 +74,16 @@ const SaleForm: React.FC<SaleFormProps> = ({
       return;
     }
 
+    // Require client name for pending payments
+    if (paymentStatus === "pending" && !clientName.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Client name is required for pending payments.",
+      });
+      return;
+    }
+
     try {
       setIsProcessing(true);
 
@@ -83,6 +94,7 @@ const SaleForm: React.FC<SaleFormProps> = ({
         discount: discount,
         totalPrice: finalPrice,
         timestamp: new Date().toISOString(),
+        clientName: clientName.trim() || undefined,
         paymentStatus: paymentStatus,
         bookTitle: selectedBook.bookTitle
       };
@@ -132,6 +144,16 @@ const SaleForm: React.FC<SaleFormProps> = ({
               <p className="text-muted-foreground text-sm">
                 ID: {selectedBook.bookId}
               </p>
+              {selectedBook.author && (
+                <p className="text-muted-foreground text-sm">
+                  By: {selectedBook.author}
+                </p>
+              )}
+              {selectedBook.category && (
+                <p className="text-muted-foreground text-sm">
+                  Category: {selectedBook.category}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -179,13 +201,27 @@ const SaleForm: React.FC<SaleFormProps> = ({
               </Select>
             </div>
 
+            {paymentStatus === "pending" && (
+              <div className="space-y-2">
+                <Label htmlFor="client-name">Client Name</Label>
+                <Input
+                  id="client-name"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  placeholder="Enter client name"
+                  disabled={isProcessing}
+                  required
+                />
+              </div>
+            )}
+
             <div className="pt-4 border-t">
-              <div className="flex justify-between">
-                <span>Base Price:</span>
-                <span>{formatCurrency(basePrice)}</span>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Base Price:</span>
+                <span className="font-medium">{formatCurrency(basePrice)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Discount ({discount}%):</span>
+                <span className="text-sm text-muted-foreground">Discount ({discount}%):</span>
                 <span>-{formatCurrency(discountAmount)}</span>
               </div>
               <div className="flex justify-between font-bold mt-2">

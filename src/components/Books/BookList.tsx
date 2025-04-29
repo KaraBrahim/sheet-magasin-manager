@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Book } from "@/types";
 import { fetchBooks } from "@/lib/googleSheetsApi";
@@ -5,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import BookItem from "./BookItem";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 
 interface BookListProps {
   onSelectBook: (book: Book) => void;
@@ -43,7 +44,9 @@ const BookList: React.FC<BookListProps> = ({ onSelectBook }) => {
     const filtered = books.filter(
       (book) =>
         book.bookTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.bookId.toLowerCase().includes(searchTerm.toLowerCase())
+        book.bookId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (book.author && book.author.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (book.category && book.category.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     setFilteredBooks(filtered);
   }, [searchTerm, books]);
@@ -63,13 +66,16 @@ const BookList: React.FC<BookListProps> = ({ onSelectBook }) => {
   return (
     <div className="space-y-4">
       <div className="sticky top-0 z-10 bg-background pt-4 pb-2">
-        <Input
-          type="search"
-          placeholder="Search books by title or ID..."
-          value={searchTerm}
-          onChange={handleSearch}
-          className="max-w-md"
-        />
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            type="search"
+            placeholder="Search books by title, ID, author or category..."
+            value={searchTerm}
+            onChange={handleSearch}
+            className="pl-10"
+          />
+        </div>
       </div>
 
       {filteredBooks.length > 0 ? (

@@ -105,6 +105,7 @@ const SalesHistory: React.FC = () => {
                 <TableHead>Qty</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Client</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -122,6 +123,9 @@ const SalesHistory: React.FC = () => {
                     <Badge variant={sale.paymentStatus === "paid" ? "success" : "destructive"}>
                       {sale.paymentStatus}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {sale.clientName || (sale.paymentStatus === "pending" ? "Unknown" : "-")}
                   </TableCell>
                   <TableCell className="text-right">
                     {sale.paymentStatus === "pending" ? (
